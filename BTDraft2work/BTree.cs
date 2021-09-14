@@ -7,7 +7,7 @@ namespace BTDraft2work
 
     // Searching a key on a B-tree in Java 
 
- 
+
 
     public class BTree
     {
@@ -63,43 +63,74 @@ namespace BTDraft2work
                 return Search(x.child[i], key);
             }
         }/// //////////////////////////////////////
-
+        public void setItemsLeft(Node x ,int[] arr,int pos)//разделение данных полного узла 
+        {
+            for (int i = 0; i < pos; i++)
+            {
+                x.key[i] = arr[i];
+                x.n++;
+            }
+        }
+        public void setItemsRight(Node x, int[] arr, int pos)//разделение данных полного узла 
+        {
+            int count = 0;
+            for (int i = pos+1; i <arr.Length; i++)
+                x.key[count++] = arr[i];
+            x.n = count;
+            //затереть оставшийсямассив 0 оставш масив
+            for (int i = count; i < arr.Length; i++)
+            {
+                x.key[i] = 0;
+            }
+        }
         // Splitting the node
         private void Split(Node x, int pos, Node y)//x=root и он пустой. y содержит
                                                    //старые значения корня которые нужно разбить
                                                    //pos это позиция которя определяет средний элемент и индекс куда он станет в корневом узле
 
-        {
-            Node z = new Node();// создается новый пучтой узел куда будут разбиваться половина старых
+        {// x теперь новый корень в него нужно поместить среднее значение из старого корня
+
+            // нужно найти средний элемент из старого корня
+            Node z = new Node();// создается новый пустой узел куда будут разбиваться половина старых
                                 // элементов из полного корня со вставлением новог входного значения
             z.leaf = y.leaf; //копируется указатель на лист из старого корня
-            z.n = T - 1;//3-1=2
-            for (int j = 0; j < T - 1; j++)//условие на то что не в корневой ноде количество хранимых данных от 2х элементов выполнено
-            {
-                z.key[j] = y.key[j + T];//11,15 значение данных
-            }
-            if (!y.leaf)// если это промежуточный узел??????
+           // z.n = T - 1;//3-1=2
+            //найти средний элемент
+          int mid =y.key.Length / 2;
+            int m = y.key[mid];
+          
+           //помещаем половину ключей из старог корня в левого ребенка то что меньше
+            setItemsLeft(z, y.key,mid);
+            //3-1=2 присваиваем теперь что в старом корне будет хронится оставшаяся половина водных данных то что больше среднего
+            setItemsRight(y, y.key,mid);
+           if (!y.leaf)// если это промежуточный узел??????
             {
                 for (int j = 0; j < T; j++)
                 {
                     z.child[j] = y.child[j + T];
                 }
             }
-            y.n = T - 1;//3-1=2 присваиваем теперь что в старом корне будет хронится оставшаяся половина водных данных
-            for (int j = x.n; j >= pos + 1; j--)
+            //y.n = T - 1;//3-1=2 присваиваем теперь что в старом корне будет хронится оставшаяся половина водных данных
+           
+            x.child[pos] = z;// присваиваем теперь новому корю .первого ребенка со значениями переопределенными в строке 70
+           // ///добавить средний элемент в новый корень
+            for (int j = 0; j < x.n; j++)
             {
-                x.child[j + 1] = x.child[j];
-            }
-            x.child[pos + 1] = z;// присваиваем теперь новому корю .первого ребенка со значениями переопределенными в строке 70
+                if (m < x.key[pos])
+                {
+                    //выполнить сдвиг элемента массива в право со вставлением входного элемента в позтцию
+                    for (int i = x.n - 1; i > j; i--)
+                        x.key[i + 1] = x.key[i];
 
-            for (int j = x.n - 1; j >= pos; j--)
-            {
-                x.key[j + 1] = x.key[j];
+                    x.key[j] = m;
+                    x.n++;
+
+                }
             }
-            x.key[pos] = y.key[T - 1];//3-1=2 добавляем второй элемент рутового массива который является в нем
-                                      //средним и добавляем его в нулевую позицию нового корня
-            x.n = x.n + 1;
-        }
+            x.key[x.n] = m;
+            x.n++;
+/////////////////////////////
+                    }
 
         // Inserting a value
         public void Insert(int key)////
@@ -113,8 +144,8 @@ namespace BTDraft2work
                 root = s;
                 s.leaf = false;
                 s.n = 0;
-                s.child[0] = r;
-                Split(s, 0, r);
+                s.child[1] = r;
+                Split(s, 0, r);//s(значение присвоеное новому корею) присвоен старый кокень, r(присвоено значение старого корня) теперь первый ребенок 
                 insertValue(s, key);// метод который принимает новый корень и входное значение произведет добавление этого значения
             }
             else
@@ -126,23 +157,90 @@ namespace BTDraft2work
         ////////// Insert the node
         private void insertValue(Node x, int k)
         {
-
-            if (x.leaf)
-            {//находим позицию куда вставить входной элемент
-                int i = 0;
-                for (i = x.n - 1; i >= 0 && k < x.key[i]; i--)
+            int c = 0;//позиция элемента в массиве узла
+            Node currentNode = x;
+            while (true)
+            {
+                if (currentNode.leaf)
                 {
-                    x.key[i + 1] = x.key[i];
+                    if (k < currentNode.key[c])
+                    {
+                        for (int pos = 0; pos < x.n; pos++)
+                        {
+                            if (k < x.key[pos])
+                            {
+                                //выполнить сдвиг элемента массива в право со вставлением входного элемента в позтцию
+                                for (int i = currentNode.n - 1; i > pos; i--)
+                                    currentNode.key[i + 1] = currentNode.key[i];
+
+                                currentNode.key[pos] = k;
+                                currentNode.n++;
+                            }
+                        }
+                    }
+                    currentNode.key[currentNode.n] = k;//////////000000000 на 20падает
+                    currentNode.n++;
+                    return;
+                }///если не лист найти ребенка
+                else if (k < currentNode.key[c] && !currentNode.leaf)
+                {
+                    currentNode = currentNode.child[c];
+                    c++;
                 }
-                x.key[i + 1] = k;
-                // увеличить счетчик показывающи что пока он
-                x.n = x.n + 1;
+                else if (k > currentNode.key[c] && !currentNode.leaf)
+                {
+                    currentNode = currentNode.child[c + 1];
+                    c++;
+                }
+                /*{
+                    if (k > currentNode.key[c])
+                    {
+                        for (int pos = 0; pos < x.n; pos++)
+                        {
+                            if (k < x.key[pos])
+                            {
+                                //выполнить сдвиг элемента массива в право со вставлением входного элемента в позтцию
+                                for (int i = x.n - 1; i > pos; i--)
+                                    x.key[i + 1] = x.key[i];
+
+                                x.key[pos] = k;
+                                x.n++;
+                            }
+                        }
+                    }
+                    x.key[x.n] = k;
+                    x.n++;
+                   
+                    if (k > currentNode.key[c + 1])
+                    {
+                        currentNode = currentNode.child[c + 1];
+                        c++;
+                    }
+                    return;
+                }*/
             }
-            else
+
+          /*  if (x.leaf) рабочее но не до конца
+            {//находим позицию куда вставить входной элемент
+
+                for (int pos = 0; pos < x.n; pos++)
+                {
+                    if (k < x.key[pos])
+                    {
+                        //выполнить сдвиг элемента массива в право со вставлением входного элемента в позтцию
+                        for (int i = x.n - 1; i > pos; i--)
+                            x.key[i + 1] = x.key[i];
+
+                        x.key[pos] = k;
+                        x.n++;
+                    }
+                }
+                x.key[x.n] = k;
+                x.n++;
+            }
+            else if(!x.leaf&& x.n== 2 * T - 1)// разбиение промежуточного узла
             {
                 int i = 0;
-
-
                 i++;
                 Node tmp = x.child[i];//присваем во временный ребенка нового корня со значениями больше среднего элемента
                 if (tmp.n == 2 * T - 1)//если в корне нет места
@@ -155,7 +253,10 @@ namespace BTDraft2work
                     }
                 }
                 insertValue(x.child[i], k);
-            }
+            }//если это не лист найти лист и вставить значение в нужную позицию
+            else if (!x.leaf) {
+                x = x.child[i];
+            }*/
 
         }
 
